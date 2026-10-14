@@ -1,0 +1,36 @@
+{
+    "name": "Northstar Enterprise Knowledge",
+    "short_name": "Northstar KB",
+    "start_url": ".",
+    "scope": ".",
+    "display": "standalone",
+    "background_color": "#0B3D5C",
+    "theme_color": "#0B3D5C",
+    "description": "Browse the Northstar Enterprise Knowledge base from Liferay, online and offline.",
+    "orientation": "any",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

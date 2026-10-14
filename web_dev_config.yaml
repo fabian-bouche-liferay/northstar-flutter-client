@@ -1,0 +1,10 @@
+# `flutter run -d chrome --wasm --dart-define-from-file=config/liferay.json`
+# The app calls Liferay directly (LIFERAY_URL): http://localhost:8081 must be
+# an allowed origin in Liferay's Portal CORS configuration for /o/*.
+#
+# Without CORS (LIFERAY_URL empty), proxy the APIs through the dev server:
+#   proxy:
+#     - target: "https://your-liferay.example.com/"
+#       prefix: "/o/"
+server:
+  port: 8081

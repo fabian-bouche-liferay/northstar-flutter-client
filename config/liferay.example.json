@@ -1,0 +1,8 @@
+{
+  "LIFERAY_URL": "https://your-liferay.example.com",
+  "LIFERAY_TARGET": "https://your-liferay.example.com",
+  "SPACE_ERC": "NMG-KNOWLEDGE",
+  "AUTH_MODE": "authorizationCode",
+  "OAUTH_CLIENT_ID": "id-... (public client for authorizationCode)",
+  "OAUTH_CLIENT_SECRET": "(only for clientCredentials)"
+}

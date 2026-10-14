@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Northstar Knowledge — signing in</title>
+</head>
+<body style="font-family: system-ui, sans-serif; color: #0B3D5C; padding: 24px">
+  <!-- OAuth 2 redirect URI of the web app: hands the authorization response
+       back to the app window (flutter_web_auth_2), then closes. -->
+  <p>Signing in… If this window does not close by itself, you can close it.</p>
+  <script>
+    (function () {
+      const message = { 'flutter-web-auth-2': window.location.href };
+      if (window.opener) {
+        window.opener.postMessage(message, window.location.origin);
+        window.close();
+      } else if (window.parent && window.parent !== window) {
+        window.parent.postMessage(message, window.location.origin);
+      } else {
+        localStorage.setItem('flutter-web-auth-2', window.location.href);
+        window.close();
+      }
+    })();
+  </script>
+</body>
+</html>
