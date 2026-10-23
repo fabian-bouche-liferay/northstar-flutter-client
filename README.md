@@ -92,8 +92,18 @@ Errors you may meet:
 |---|---|
 | `Liferay refused the sign-in: unauthorized_client` | the client still has a **client secret**, or *PKCE Extended Authorization Code* is not allowed |
 | `Liferay refused the OAuth 2 client (401)` | the client requires authentication (*Client Authentication Method* is not *None*): wrong client, e.g. the service account's |
-| `Liferay refused the authorization code (400)` | the callback URI shown in the message is not registered on the client |
+| `Liferay refused the authorization code (400)` | Liferay answered `invalid_grant`: the user lacks the **Create Token** permission on the client (see below), or the callback URI shown in the message is not registered on the client |
 | sign-in page shows `redirect_uri` error | same: callback URI missing or different (exact match: scheme, port, path, no trailing slash) |
+| the sign-in window ends on the Liferay home page and the app keeps waiting | CMS standalone instance: see *3. Sign-in page on CMS standalone instances* |
+
+**Create Token permission.** When exchanging the code, Liferay checks that the
+user has the *Create Token* permission on the OAuth 2 application; only its
+creator has it by default. Without it `/o/oauth2/token` answers
+`{"error":"invalid_grant"}` and nothing is logged (unless the logger
+`com.liferay.oauth2.provider.rest.internal.endpoint.access.token.grant.handler`
+is set to DEBUG) — `/o/oauth2/authorize` does not check it, so the user does
+get a code. On the application: ⋮ › **Permissions** › check **Create Token**
+for the role of the users (e.g. **User**).
 
 Keep this client separate from the service account below: turning a client
 credentials client into a public one breaks the tools and integration tests.
@@ -110,6 +120,10 @@ the connection settings:
 ```bash
 flutter test test/liferay_api_test.dart
 ```
+
+The *Client Credential User* also needs the **Create Token** permission on
+this application (see above), otherwise the token request fails with
+`invalid_grant`.
 
 ### 2. CORS (web app only)
 
@@ -139,11 +153,54 @@ then uses same-origin URLs and `tool/serve.dart` proxies `/o/*` to
 `LIFERAY_TARGET` (user sign-in needs the real Liferay URL). The Android app is
 not subject to CORS.
 
+### 3. Sign-in page on CMS standalone instances
+
+On an instance set up with the CMS standalone site initializer, a user who is
+not yet logged in to Liferay never comes back to the app: after the Liferay
+login, the sign-in window shows the CMS home page and the app keeps waiting.
+(Users already logged in to Liferay are not affected.)
+
+**Cause (Liferay bug).** `/o/oauth2/authorize` sends anonymous users to
+`/c/portal/login?redirect=<authorize URL>`, which opens the Guest site's
+default *Sign In* utility page (`/web/guest/sign-in`). That page holds
+`CMSLoginPortlet`, which embeds the Login portlet with
+`<liferay-portlet:runtime>`; utility pages are always rendered in the `normal`
+window state, where the embedded Login portlet does not receive its
+`redirect` parameter. The login form is posted with an empty `redirect` and
+Liferay lands on the home page instead of resuming the OAuth flow. The Guest
+site's utility pages cannot be changed in CMS standalone mode.
+
+**Workaround.** In *Control Panel › Instance Settings › Security › OAuth 2 ›
+Authorize Screen*, set **Login URL** to:
+
+```
+/c/portal/login?p_l_id=78&windowState=pop_up
+```
+
+- `p_l_id` is the id (plid) of a page of **another site that has no default
+  Sign In utility page** (here a page of the CMS site): `/c/portal/login` then
+  renders the classic Login portlet, which keeps the `redirect`. **`78` is
+  specific to our instance**: use the plid of any page of such a site (it is
+  shown in the page source, `Liferay.ThemeDisplay.getPlid()`).
+- `windowState=pop_up` shows only the login form, without the content of that
+  page (otherwise e.g. the CMS editor toolbar surrounds the form), while
+  keeping the theme JavaScript the form needs. `windowState=exclusive` does
+  not work: without JavaScript the *Sign In* button stays disabled and Liferay
+  answers *"Authentication failed. Please enable browser cookies"*.
+- Liferay appends `&redirect=<authorize URL>` to this Login URL itself.
+
+Check (anonymous): the hidden field must contain the authorize URL.
+
+```bash
+curl -sL "<liferay>/c/portal/login?p_l_id=78&windowState=pop_up&redirect=%2Fo%2Foauth2%2Fauthorize" | grep -o 'LoginPortlet_redirect"[^>]*value="[^"]*"'
+```
+
 ## Sign-in, sessions and offline copies
 
 - Without a session the app shows **only the sign-in page** (deep links too)
   and the connection settings. *Sign in with Liferay* opens the Liferay login
-  page (a popup on the web, a Custom Tab on Android); the password is only ever
+  page (a centered popup window on the web — a tab if the browser blocks
+  popups —, a Custom Tab on Android); the password is only ever
   typed on Liferay.
 - The session (access + refresh token) is kept on the device, so the app
   reopens — also **offline** — without signing in again; access tokens are

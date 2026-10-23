@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 
+import 'auth_popup.dart';
 import 'liferay_client.dart';
 import 'session.dart';
 
@@ -22,7 +23,8 @@ class AuthException implements Exception {
 }
 
 /// OAuth 2 authorization code flow with PKCE (RFC 7636) against Liferay:
-/// opens the Liferay sign-in page (popup on the web, Custom Tab on Android),
+/// opens the Liferay sign-in page (centered popup on the web, Custom Tab on
+/// Android),
 /// receives the code on the redirect URI and exchanges it for tokens.
 class AuthFlow {
   AuthFlow._();
@@ -60,10 +62,12 @@ class AuthFlow {
 
     final String result;
     try {
-      result = await FlutterWebAuth2.authenticate(
-        url: authorize.toString(),
-        callbackUrlScheme: mobileCallbackScheme,
-      );
+      result =
+          await (authenticateInPopup(authorize.toString()) ??
+              FlutterWebAuth2.authenticate(
+                url: authorize.toString(),
+                callbackUrlScheme: mobileCallbackScheme,
+              ));
     } on Exception catch (e) {
       throw AuthException(
         '$e'.contains('CANCELED') ? 'Sign-in cancelled.' : 'Sign-in failed: $e',
